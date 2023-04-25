@@ -1,0 +1,68 @@
+---
+- name: Install Dokku
+  become: true
+  block:
+    - name: Get latest release version
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/dokku/dokku/releases/latest
+        force: true
+        return_content: true
+      register: dokku_release
+      failed_when: (dokku_release.content | from_json)['tag_name'] is undefined
+
+    - name: Get latest release version > Result
+      ansible.builtin.debug:
+        msg: "Install Dokku {{ (dokku_release.content | from_json)['tag_name'] }}"
+
+    - name: Download bootstrap script
+      ansible.builtin.get_url:
+        url: "https://dokku.com/install/{{ (dokku_release.content | from_json)['tag_name'] }}/bootstrap.sh"
+        dest: ~/bootstrap.sh
+        mode: +x
+
+    - name: Execute bootstrap script
+      ansible.builtin.command:
+        cmd: ~/bootstrap.sh
+      environment:
+        DOKKU_BRANCH: master
+        DOKKU_CHECKOUT: "{{ (dokku_release.content | from_json)['tag_name'] }}"
+      register: dokku_install
+      changed_when: true
+
+    - name: Execute bootstrap script > Result
+      ansible.builtin.debug:
+        var: dokku_install.stdout_lines
+
+    - name: Clean up
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - ~/bootstrap.sh
+        - ~/dokku
+
+- name: Add SSH keys
+  block:
+    - name: Who am I
+      ansible.builtin.command: whoami
+      register: whoami
+      changed_when: false
+
+    - name: Get SSH keys from ~/.ssh/authorized_keys
+      ansible.builtin.command:
+        cmd: cat ~/.ssh/authorized_keys
+      register: ssh_keys
+      changed_when: false
+
+    - name: Add SSH keys to Dokku
+      become: true
+      ansible.builtin.shell:
+        cmd: |
+          set -eo pipefail
+          echo "{{ item }}" | dokku ssh-keys:add {{ whoami.stdout }}-{{ idx }}
+      args:
+        executable: /bin/bash
+      loop: "{{ ssh_keys.stdout_lines }}"
+      loop_control:
+        index_var: idx
+      changed_when: true

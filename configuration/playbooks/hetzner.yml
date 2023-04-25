@@ -1,0 +1,31 @@
+---
+- name: Upgrade and update OS
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Upgrade and update
+      ansible.builtin.apt:
+        upgrade: safe
+        update_cache: true
+
+- name: OS and SSH hardening
+  hosts: all
+  become: true
+
+  vars:
+    os_env_umask: "022"
+    hidepid_option: 0
+    sysctl_overwrite:
+      net.ipv4.ip_forward: 1
+      vm.mmap_rnd_bits: 28
+
+  roles:
+    - devsec.hardening.os_hardening
+    - devsec.hardening.ssh_hardening
+
+- name: Dokku
+  hosts: all
+
+  roles:
+    - dokku

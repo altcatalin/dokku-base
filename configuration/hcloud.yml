@@ -1,0 +1,5 @@
+plugin: hcloud
+label_selector: project
+keyed_groups:
+  - key: labels
+    prefix: label

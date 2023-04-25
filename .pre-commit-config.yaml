@@ -1,0 +1,27 @@
+repos:
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.77.3
+  hooks:
+    - id: terraform_docs
+      args:
+        - --hook-config=--recursive
+    - id: terraform_fmt
+      args:
+        - --args=-recursive
+    - id: terraform_tflint
+    - id: terraform_validate
+      args:
+        - --hook-config=--retry-once-with-cleanup=true
+    - id: terraform_tfsec
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+    - id: end-of-file-fixer
+- repo: https://github.com/ansible-community/ansible-lint.git
+  rev: v6.14.3
+  hooks:
+    - id: ansible-lint
+      entry: env ANSIBLE_COLLECTIONS_PATHS=configuration/requirements/collections ANSIBLE_ROLES_PATH=./configuration/requirements/roles:./configuration/roles ansible-lint
+      args:
+        - configuration
+        - --format pep8
