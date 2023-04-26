@@ -19,6 +19,8 @@
     sysctl_overwrite:
       net.ipv4.ip_forward: 1
       vm.mmap_rnd_bits: 28
+    ssh_permit_tunnel: true
+    ssh_allow_tcp_forwarding: "yes"
 
   roles:
     - devsec.hardening.os_hardening
